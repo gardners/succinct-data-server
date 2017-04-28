@@ -126,7 +126,7 @@ int main(int argc,char **argv)
 	  exit(-1);
 	}
 	break;
-      case ',': state=PAIR_END; break; 
+      case ',': state=KEY_START; break; 
       default:
 	fprintf(stderr,"%s:%d:%d: Expected , after numeric value, saw '%c'\n",
 		argc>1?argv[1]:"stdin",line,col,
@@ -159,7 +159,7 @@ int main(int argc,char **argv)
       break;
     case VAL_END:
       if (c!=',') {
-	fprintf(stderr,"%s:%d:%d: Expected : after \", saw '%c'\n",
+	fprintf(stderr,"%s:%d:%d: Expected , after closing \", saw '%c'\n",
 		argc>1?argv[1]:"stdin",line,col,
 		c);
 	exit(-1);
@@ -168,9 +168,9 @@ int main(int argc,char **argv)
       break;
     case PAIR_END:
       switch(c) {
-      case ',': state=KEY_START; break;
+      case '\"': state=KEY_START; break;
       default:
-	fprintf(stderr,"%s:%d:%d: Expected : after \", saw '%c'\n",
+	fprintf(stderr,"%s:%d:%d: Expected new value/key pair or parentheses of some sort, saw '%c'\n",
 		argc>1?argv[1]:"stdin",line,col,
 		c);
 	exit(-1);
