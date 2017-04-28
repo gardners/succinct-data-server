@@ -31,8 +31,23 @@ int report_pair(int depth,char *key,char *value)
   if (!strcasecmp("receiver",key)) { strcpy(receiver,value); flags|=2; }
   if (!strcasecmp("text",key)) { strcpy(text,value); flags|=4; }
   if (flags==7) {
-    fprintf(stderr,"[%s] -> [%s] : [%s]\n",sender,receiver,text);
     flags=0;
+    fprintf(stderr,"[%s] -> [%s] : [%s]\n",sender,receiver,text);
+    if (strstr(text," http://inr.ch/")) {
+      // inReach message
+      // Inreach chops messages into pieces so that they can put their
+      // self-promotion link in.
+      // We then need to access this URL and extract the complete text from there
+      char cmd[1024];
+      char *s=strstr(text," http://inr.ch/");
+      s++;
+      char *e=s;
+      fprintf(stderr,"e='%s'\n",e);
+      while(*e!=' ') e++;
+      *e=0;
+      snprintf(cmd,1024,"wget -O /tmp/fetch.tmp -q %s",s);
+      fprintf(stderr,"%s\n",cmd);
+    }
   }
   return 0;
 }
