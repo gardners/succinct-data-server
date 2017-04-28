@@ -79,8 +79,46 @@ int report_pair(int depth,char *key,char *value)
 	&&(!strstr(text," ")) // SD messages do not have spaces in them
 	&&(strlen(text)>=10)) // prefix is 10 chars, so must be that long
       {
-	fprintf(stdout,"%s:%s:%s:%s\n",id,sender,receiver,text);
-    }
+	fprintf(stderr,"%s:%s:%s:%s\n",id,sender,receiver,text);
+	char filename[1024];
+
+	// Put into pieces/ for processing
+	snprintf(filename,1024,"pieces/%s",text);
+	filename[strlen("pieces/")+10]=0;
+	int r1=0;
+	int r2=0;
+	FILE *f=fopen(filename,"w");
+	if (f) {
+	  r1=fprintf(f,"%s",text);
+	  fclose(f);
+	} else {
+	  fprintf(stderr,"Could not write to %s\n",filename);
+	  perror("fopen");
+	}
+
+	// Make a persistent copy as well
+	snprintf(filename,1024,"piecelog/%s",text);
+	filename[strlen("piecelog/")+10]=0;
+	f=fopen(filename,"w");
+	if (f) {
+	  r2=fprintf(f,"%s",text);
+	  fclose(f);
+	} else {
+	  fprintf(stderr,"Could not write to %s\n",filename);
+	  perror("fopen");
+	}
+
+	// Delete from TextMagic if we have saved these copies without trouble
+	if ((r1==strlen(text))&&(r2==strlen(text))) {
+	  // We wrote the file, so safe to delete from text magic
+	  char cmd[1024];
+	  snprintf(cmd,1024,"tm.sh DELETE /replies/%s",id);
+	  fprintf(stderr,"%s\n",cmd);
+	} else fprintf(stderr,"Short write -- not deleting from TextMagic.\n");
+
+	
+      }
+  
   }
   return 0;
 }
