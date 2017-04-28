@@ -72,7 +72,15 @@ int report_pair(int depth,char *key,char *value)
 	// fprintf(stderr,"Extracted text from inr.ch: [%s]\n",text);
       }      
     }
-    fprintf(stdout,"%s:%s:%s:%s\n",id,sender,receiver,text);
+    // Ignore messages that are not pieces
+
+    if ((text[0]!='(') // ignore partial pieces from inReach (we get the whole thing via scraping their website
+	&&(text[0]<=text[1]) // fragment is not greater than maximum fragment of piece
+	&&(!strstr(text," ")) // SD messages do not have spaces in them
+	&&(strlen(text)>=10)) // prefix is 10 chars, so must be that long
+      {
+	fprintf(stdout,"%s:%s:%s:%s\n",id,sender,receiver,text);
+    }
   }
   return 0;
 }
