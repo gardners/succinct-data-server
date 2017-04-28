@@ -45,8 +45,30 @@ int report_pair(int depth,char *key,char *value)
       fprintf(stderr,"e='%s'\n",e);
       while(*e!=' ') e++;
       *e=0;
+      unlink("/tmp/fetch.tmp");
       snprintf(cmd,1024,"wget -O /tmp/fetch.tmp -q %s",s);
-      fprintf(stderr,"%s\n",cmd);
+      // fprintf(stderr,"%s\n",cmd);
+      system(cmd);
+      FILE *f=fopen("/tmp/fetch.tmp","r");
+      char *signature=",\"X\":\"";
+      int ofs=0;
+      if (f) {
+	// Search for ',"X":"', and scrape actual text from immediately after
+	int text_len=0;
+	while(!feof(f)) {
+	  int c=fgetc(f);
+	  if (signature[ofs]) {
+	    if (c==signature[ofs]) ofs++;
+	    else if (c==signature[0]) ofs=1;
+	    else ofs=0;
+	  } else {
+	    if (c=='\"') break;
+	    else if (text_len<8000) { text[text_len++]=c; text[text_len]=0; }
+	  }
+	}
+	fclose(f);
+	fprintf(stderr,"Extracted text from inr.ch: [%s]\n",text);
+      }      
     }
   }
   return 0;
