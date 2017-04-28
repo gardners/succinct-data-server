@@ -192,13 +192,16 @@ int main(int argc,char **argv)
       switch (c) {
       case '0': case '1': case '2': case '3': case '4': case '5':
       case '6': case '7': case '8': case '9':
-	if (value_len<8000) { value[value_len++]=c; value_len++; }
+	if (value_len<8000) {
+	  value[value_len++]=c; value[value_len]=0;
+	}
 	else {
 	  fprintf(stderr,"%s:%d:%d: Run-away value field (began at %s:%d:%d)\n",
 		  argc>1?argv[1]:"stdin",line,col,
 		  argc>1?argv[1]:"stdin",start_line,start_col);
 	  exit(-1);
 	}
+	state=VAL_NUMERIC;
 	break;
       case ',':
 	report_pair(array_depth,key,value);
@@ -211,6 +214,7 @@ int main(int argc,char **argv)
 		c);
 	exit(-1);
       }
+      break;
     case VAL:
       if (c=='\\') state=VAL_SLASH;
       else if (c=='\"') {
