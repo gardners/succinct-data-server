@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <strings.h>
+#include <string.h>
 
 #define IDLE 1
 #define KEY 8
