@@ -24,13 +24,15 @@ int flags=0;
 char sender[8192];
 char receiver[8192];
 char text[8192];
+char id[8192];
 
 int report_pair(int depth,char *key,char *value)
 {
   if (!strcasecmp("sender",key)) { strcpy(sender,value); flags|=1; }
   if (!strcasecmp("receiver",key)) { strcpy(receiver,value); flags|=2; }
   if (!strcasecmp("text",key)) { strcpy(text,value); flags|=4; }
-  if (flags==7) {
+  if (!strcasecmp("id",key)) { strcpy(id,value); flags|=8; }
+  if (flags==15) {
     flags=0;
     // fprintf(stderr,"[%s] -> [%s] : [%s]\n",sender,receiver,text);
     if (strstr(text," http://inr.ch/")) {
@@ -70,7 +72,7 @@ int report_pair(int depth,char *key,char *value)
 	// fprintf(stderr,"Extracted text from inr.ch: [%s]\n",text);
       }      
     }
-    fprintf(stdout,"%s:%s:%s\n",sender,receiver,text);
+    fprintf(stdout,"%s:%s:%s:%s\n",id,sender,receiver,text);
   }
   return 0;
 }
