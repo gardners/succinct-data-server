@@ -32,7 +32,7 @@ int report_pair(int depth,char *key,char *value)
   if (!strcasecmp("text",key)) { strcpy(text,value); flags|=4; }
   if (flags==7) {
     flags=0;
-    fprintf(stderr,"[%s] -> [%s] : [%s]\n",sender,receiver,text);
+    // fprintf(stderr,"[%s] -> [%s] : [%s]\n",sender,receiver,text);
     if (strstr(text," http://inr.ch/")) {
       // inReach message
       // Inreach chops messages into pieces so that they can put their
@@ -42,7 +42,7 @@ int report_pair(int depth,char *key,char *value)
       char *s=strstr(text," http://inr.ch/");
       s++;
       char *e=s;
-      fprintf(stderr,"e='%s'\n",e);
+      // fprintf(stderr,"e='%s'\n",e);
       while(*e!=' ') e++;
       *e=0;
       unlink("/tmp/fetch.tmp");
@@ -67,9 +67,10 @@ int report_pair(int depth,char *key,char *value)
 	  }
 	}
 	fclose(f);
-	fprintf(stderr,"Extracted text from inr.ch: [%s]\n",text);
+	// fprintf(stderr,"Extracted text from inr.ch: [%s]\n",text);
       }      
     }
+    fprintf(stdout,"%s:%s:%s\n",sender,receiver,text);
   }
   return 0;
 }
