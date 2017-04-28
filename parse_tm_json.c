@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <strings.h>
 
 #define IDLE 1
 #define KEY 8
@@ -17,6 +18,24 @@
 #define VAL_END 7
 #define PAIR_END 10
 #define VAL_NUMERIC 11
+#define DONE 12
+
+int flags=0;
+char sender[8192];
+char receiver[8192];
+char text[8192];
+
+int report_pair(int depth,char *key,char *value)
+{
+  if (!strcasecmp("sender",key)) { strcpy(sender,value); flags|=1; }
+  if (!strcasecmp("receiver",key)) { strcpy(receiver,value); flags|=2; }
+  if (!strcasecmp("text",key)) { strcpy(text,value); flags|=4; }
+  if (flags==7) {
+    fprintf(stderr,"[%s] -> [%s] : [%s]\n",sender,receiver,text);
+    flags=0;
+  }
+  return 0;
+}
 
 int main(int argc,char **argv)
 {
@@ -25,6 +44,8 @@ int main(int argc,char **argv)
   char value[8192];
   int value_len=0;
   int state=IDLE;
+
+  int array_depth=0;
   
   FILE *f=stdin;
   if (argc>1) {
@@ -36,13 +57,14 @@ int main(int argc,char **argv)
   }
 
   int line=1;
-  int col=1;
+  int col=-1;
 
-  int start_line=1, start_col=1;
+  int start_line=1, start_col=-1;
   
   while(!feof(f)) {
     int c=fgetc(f);
-    if (c=='\n') { col=1; line++;} else col++;
+    while (c=='\n') { col=-1; line++; c=fgetc(f); }
+    col++;
 
     switch(state) {
     case IDLE:
@@ -51,12 +73,16 @@ int main(int argc,char **argv)
 		argc>1?argv[1]:"stdin",line,col,
 		c);
 	exit(-1);
-      } else state=KEY_START;
+      } else {
+	array_depth++;
+	state=KEY_START; key_len=0; key[0]=0;
+      }
       break;
     case KEY_START:
       start_line=line; start_col=col;
+      key_len=0; value_len=0;
       if (c!='\"') {
-	fprintf(stderr,"%s:%d:%d: Expected \", saw '%c'\n",
+	fprintf(stderr,"%s:%d:%d: Expected \" at start of key name, saw '%c'\n",
 		argc>1?argv[1]:"stdin",line,col,
 		c);
 	exit(-1);
@@ -97,16 +123,24 @@ int main(int argc,char **argv)
       break;
     case VAL_START:
       start_line=line; start_col=col;
+      value[0]=0; value_len=0;
       switch (c) {
+      case '[':
+	// Array
+	array_depth++;
+	state=IDLE;
+	break;
       case '0': case '1': case '2': case '3': case '4': case '5':
       case '6': case '7': case '8': case '9':
 	value[0]=c; value_len=1;
 	state=VAL_NUMERIC;
 	break;
-      case '"': state=VAL; break;
+      case '"':
+	state=VAL;
+	break;
       default:
 	if (c!='\"') {
-	  fprintf(stderr,"%s:%d:%d: Expected \", saw '%c'\n",
+	  fprintf(stderr,"%s:%d:%d: Expected numeric value or \" at start of value identifier, saw '%c'\n",
 		  argc>1?argv[1]:"stdin",line,col,
 		  c);
 	  exit(-1);
@@ -126,7 +160,11 @@ int main(int argc,char **argv)
 	  exit(-1);
 	}
 	break;
-      case ',': state=KEY_START; break; 
+      case ',':
+	report_pair(array_depth,key,value);
+	state=KEY_START;
+	key_len=0; key[0]=0;
+	break; 
       default:
 	fprintf(stderr,"%s:%d:%d: Expected , after numeric value, saw '%c'\n",
 		argc>1?argv[1]:"stdin",line,col,
@@ -135,8 +173,10 @@ int main(int argc,char **argv)
       }
     case VAL:
       if (c=='\\') state=VAL_SLASH;
-      else if (c=='\"') state=VAL_END;
-      else {
+      else if (c=='\"') {
+	report_pair(array_depth,key,value);
+	state=VAL_END;
+      } else {
 	if (value_len<8000) { value[value_len++]=c; value[value_len]=0; }
 	else {
 	  fprintf(stderr,"%s:%d:%d: Run-away value field (began at %s:%d:%d)\n",
@@ -147,10 +187,12 @@ int main(int argc,char **argv)
       }
       break;
     case VAL_SLASH:
-      if (c=='\"') {
+      switch(c) {
+      case '\"': case '/':
 	if (value_len<8000) { value[value_len++]=c; value[value_len]=0; }
 	state=VAL;
-      } else {
+	break;
+      default:
 	fprintf(stderr,"%s:%d:%d: Expected \" after \\, saw '%c'\n",
 		argc>1?argv[1]:"stdin",line,col,
 		c);
@@ -158,17 +200,35 @@ int main(int argc,char **argv)
       }
       break;
     case VAL_END:
-      if (c!=',') {
+      switch(c) {
+      case -1:
+	state=DONE;
+	break;
+      case ',':
+	state=PAIR_END; break;
+      case '}': case ']':
+	if (array_depth>0) {
+	  array_depth--; state=VAL_END;
+	}
+	else {
+	  fprintf(stderr,"%s:%d:%d: Unmatched } after \"\n",
+		  argc>1?argv[1]:"stdin",line,col);
+	  exit(-1);
+	}
+	break;
+      default:	
 	fprintf(stderr,"%s:%d:%d: Expected , after closing \", saw '%c'\n",
 		argc>1?argv[1]:"stdin",line,col,
 		c);
 	exit(-1);
       }
-      state=PAIR_END;
       break;
     case PAIR_END:
       switch(c) {
-      case '\"': state=KEY_START; break;
+      case '\"': state=KEY; key_len=0; key[0]=0; break;
+      case '{':
+	array_depth++;
+	break;
       default:
 	fprintf(stderr,"%s:%d:%d: Expected new value/key pair or parentheses of some sort, saw '%c'\n",
 		argc>1?argv[1]:"stdin",line,col,
