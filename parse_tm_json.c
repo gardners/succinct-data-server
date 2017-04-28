@@ -115,6 +115,7 @@ int report_pair(int depth,char *key,char *value)
 	  char cmd[1024];
 	  snprintf(cmd,1024,"tm.sh DELETE /replies/%s",id);
 	  fprintf(stderr,"%s\n",cmd);
+	  system(cmd);
 	} else fprintf(stderr,"Short write -- not deleting from TextMagic.\n");
 
 	
