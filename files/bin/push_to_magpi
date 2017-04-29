@@ -10,7 +10,9 @@ for record in $( find $HOME/var/sdoutput -name "*.xml" ); do
     result=$?
     echo $result $record
     if [ $result -eq 0 ]; then
-      touch ${record}.uploaded
+#      touch ${record}.uploaded
+      mkdir -p ~/var/xmllog/
+      mv ${record} ~/var/xmllog/
     fi
     echo "     marked as uploaded"
   fi
