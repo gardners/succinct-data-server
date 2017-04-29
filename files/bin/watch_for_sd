@@ -1,0 +1,23 @@
+#!/bin/bash
+
+count=0
+lastmd5=impossible
+while [ true ];
+do
+   md5=`md5sum </tmp/text-magic-latest-incoming.txt | cut -f1 -d" "`
+  if [ "x$md5" != "x$lastmd5" ]; then
+    echo "Possible new TextMagic messages"
+    count=999
+  else
+    count=$((count + 1))
+  fi
+  if [ $count -gt 71 ]; then
+    # check for activity at least every 30 minutes
+    lastmd5=$md5
+    $HOME/bin/poll_textmagic
+    $HOME/bin/reassemble_records
+    $HOME/bin/push_to_magpi
+    count=0
+  fi
+  sleep 5
+done
