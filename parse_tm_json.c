@@ -43,7 +43,7 @@ int report_pair(int depth,char *key,char *value)
       time_t now=time(0);
       ctime_r(&now,timestamp);
       if (strlen(timestamp)) timestamp[strlen(timestamp)-1]=0;
-      FILE *f=fopen("textmagic_messages.log","w+");
+      FILE *f=fopen("textmagic_messages.log","a");
       fprintf(f,"%s:%s:%s:%s:%s\n",
 	      timestamp,id,sender,receiver,text);
       fclose(f);      
