@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for piece in /tmp/succinctdatarecords/record.*
+do
+  shortname=`echo $piece | sed 's/^.*\.//g'`
+  name=`echo $piece | sed -e 's,^.*/,,g' -e 's/^record\.//'`
+  echo $piece $shortname $name
+  cp $piece $HOME/var/pieces/$shortname
+  if [ -e  $HOME/var/pieces/$shortname ] && [ ! -z $HOME/var/pieces/$shortname ]; then
+    echo "Safe to remove $piece"
+    wget -O- -q "http://localhost/sd-release-piece.php?piece=$name"
+  fi
+done

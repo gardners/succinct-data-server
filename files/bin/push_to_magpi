@@ -1,0 +1,17 @@
+#!/bin/bash -f
+
+#tar zcvf /var/www/html/sdoutput/sdoutput.tgz `find $HOME/var/sdoutput -name "*.xml" `
+#chmod 644 /var/www/html/sdoutput/sdoutput.tgz
+
+for record in $( find $HOME/var/sdoutput -name "*.xml" ); do
+  if [ ! -e ${record}.uploaded ]; then
+    echo curl -v -X POST -H 'Content-type: text/xml' -d @${record} https://www.magpi.com/mobileApi/uploadData
+    curl -X POST -H 'Content-type: text/xml' -d @${record} https://www.magpi.com/mobileApi/uploadData
+    result=$?
+    echo $result $record
+    if [ $result -eq 0 ]; then
+      touch ${record}.uploaded
+    fi
+    echo "     marked as uploaded"
+  fi
+done

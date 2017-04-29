@@ -1,0 +1,17 @@
+#!/bin/bash
+shopt -s nullglob
+
+# Copy uploaded forms into place
+cd ${HOME}/var/forms
+for form in /tmp/succinctdataforms/*.xhtml
+do
+  cp $form ../forms/
+done
+
+# Create recipe and template from uploaded form
+cd ${HOME}/var/recipes
+for form in  ../forms/*.xhtml
+do
+  echo $form
+  smac recipe xhcreate "$form"
+done

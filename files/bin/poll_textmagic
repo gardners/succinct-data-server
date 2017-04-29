@@ -1,0 +1,2 @@
+cd $HOME/var
+tm.sh GET "/replies?limit=999" | $HOME/succinct-data-server/parse_tm_json
