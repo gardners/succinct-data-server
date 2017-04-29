@@ -1,0 +1,26 @@
+cd ~/var
+echo smac recipe decrypt ~/var/pieces ~/var/sdspool @"$HOME/etc/smac-server-passphrase"
+smac recipe decrypt ~/var/pieces ~/var/sdspool @"$HOME/etc/smac-server-passphrase"
+smac recipe decompress recipes sdspool sdoutput
+cd sdspool
+records=$( echo *.out | grep -v "\*\.out" | wc -l)
+if [ "x$records" == "x0" ]; then
+  echo "Nothing to do."
+  exit
+fi
+echo $records records.
+for record in $( echo *.out )
+do
+  echo $record
+  prefix=`echo $record | cut -f1 -d.`
+  echo "    " $( echo ../pieces/??$prefix )
+  # Delete pieces we used to make the record
+  rm $( echo ../pieces/??$prefix )
+  # Delete the SD compressed record?  We can only sensibly do this if we have succeeded in
+  # processing it.
+  if [ -e ${record}.processed ]; then
+    echo ${record} has been processed -- cleaning up
+    mv $record ../sdlog/
+    rm ${record}.processed
+  fi
+done
