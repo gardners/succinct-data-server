@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <strings.h>
 #include <string.h>
+#include <time.h>
 
 #define IDLE 1
 #define KEY 8
@@ -35,6 +36,19 @@ int report_pair(int depth,char *key,char *value)
   if (!strcasecmp("id",key)) { strcpy(id,value); flags|=8; }
   if (flags==15) {
     flags=0;
+
+    // Write raw message details to log file
+    {
+      char timestamp[1024];
+      time_t now=time(0);
+      ctime_r(&now,timestamp);
+      if (strlen(timestamp)) timestamp[strlen(timestamp)-1]=0;
+      FILE *f=fopen("textmagic_messages.log","w+");
+      fprintf(f,"%s:%s:%s:%s:%s\n",
+	      timestamp,id,sender,receiver,text);
+      fclose(f);      
+    }
+    
     // fprintf(stderr,"[%s] -> [%s] : [%s]\n",sender,receiver,text);
     if (strstr(text," http://inr.ch/")) {
       // inReach message
